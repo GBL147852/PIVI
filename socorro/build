@@ -1,0 +1,3 @@
+#!/bin/sh
+
+g++ texture.cpp shader.cpp main.cpp -o main -framework OpenGL -I/usr/local/include -L/usr/local/lib -lglfw -lglew
