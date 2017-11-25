@@ -1,3 +1,3 @@
 #!/bin/sh
 
-g++ mesh.cpp texture.cpp shader.cpp main.cpp -o main -framework OpenGL -I/usr/local/include -L/usr/local/lib -lglfw -lglew
+g++ rh.cpp mesh.cpp texture.cpp shader.cpp main.cpp -o main -framework OpenGL -I/usr/local/include -L/usr/local/lib -lglfw -lglew
