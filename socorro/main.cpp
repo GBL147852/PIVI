@@ -28,8 +28,8 @@ void start() {
 	//câmera
 	camera.projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
 	camera.view = glm::lookAt(
-		glm::vec3(-4,3,3), //câmera em (4,3,3)
-		glm::vec3(0,0,0), //olhando pro meio
+		glm::vec3(-3,1,3), //posição
+		glm::vec3(0,0,0), //pra onde tá olhando
 		glm::vec3(0,1,0)  //de cabeça pra cima
 	);
 	
@@ -48,11 +48,11 @@ void end() {
 }
 
 void update() {
-	printf("oi! %f %f\n",totalTime,deltaTime);
+	//printf("oi! %f %f\n",totalTime,deltaTime);
 }
 
 void render() {
-	rh_draw(mesh_sphere,texture_angery,glm::mat4(1));
+	rh_draw(mesh_sphere,texture_angery,glm::scale(glm::mat4(1),glm::vec3(1,1,1)));
 	rh_draw(mesh_missile,texture_smooth,glm::translate(glm::mat4(1),glm::vec3(-1.5f,0,0)));
 }
 

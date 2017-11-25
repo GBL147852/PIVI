@@ -23,6 +23,9 @@ float totalTime,deltaTime;
 GLuint vertex_array_id;
 GLuint shaders_program_id;
 
+GLuint matrix_mvp_id;
+GLuint matrix_mv_id;
+
 double firstTime,lastTime;
 
 Mesh rh_create_mesh(const char *path) {
@@ -120,7 +123,8 @@ bool rh_start() {
 	glActiveTexture(GL_TEXTURE0);
 	
 	//inicializa valores de câmera
-	camera.matrix_id = glGetUniformLocation(shaders_program_id,"mvp");
+	matrix_mvp_id = glGetUniformLocation(shaders_program_id,"mvp");
+	matrix_mv_id = glGetUniformLocation(shaders_program_id,"mv");
 	camera.projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
 	camera.view = glm::mat4(1);
 	
@@ -164,8 +168,11 @@ void rh_end() {
 
 void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 	//passa infos pro shader (matriz pro MVP, textura pro TEXTURE0)
-	glm::mat4 mvp = camera.projection*camera.view*model;
-	glUniformMatrix4fv(camera.matrix_id,1,GL_FALSE,&mvp[0][0]);
+	glm::mat4 mv = camera.view*model;
+	glm::mat4 mvp = camera.projection*mv;
+	//mv = glm::transpose(glm::inverse(mv));
+	glUniformMatrix4fv(matrix_mvp_id,1,GL_FALSE,&mvp[0][0]);
+	glUniformMatrix4fv(matrix_mv_id,1,GL_FALSE,&mv[0][0]);
 	glBindTexture(GL_TEXTURE_2D,texture.id);
 	
 	//os vértices são o 0
@@ -192,10 +199,23 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 		(void*)0                          // offset no array
 	);
 	
+	//os uvs são o 1
+	glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER,mesh.normal);
+	glVertexAttribPointer(
+		2,                                // atributo. tem q combinar com o shader
+		3,                                // comprimento. xyz = 3
+		GL_FLOAT,                         // tipo
+		GL_FALSE,                         // tá normalizado?
+		0,                                // stride
+		(void*)0                          // offset no array
+	);
+	
 	//desenha como triângulos
 	glDrawArrays(GL_TRIANGLES,0,mesh.count);
 	
 	//tira essas coisas
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
 }

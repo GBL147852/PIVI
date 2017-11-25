@@ -14,7 +14,6 @@ typedef struct {
 } Texture;
 
 typedef struct {
-	GLuint matrix_id;
 	glm::mat4 projection;
 	glm::mat4 view;
 } Camera;
