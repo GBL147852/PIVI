@@ -16,25 +16,25 @@ using namespace std;
 
 std::string LoadFile(const char *path) {
 	std::string str;
-	std::ifstream stream(path,std::ios::in);
+	std::ifstream stream(("data/shaders/"+(std::string(path))).c_str(),std::ios::in);
 	if (stream.is_open()) {
-		stream.seekg(0, std::ios::end);   
+		stream.seekg(0,std::ios::end);   
 		str.reserve(stream.tellg());
-		stream.seekg(0, std::ios::beg);
+		stream.seekg(0,std::ios::beg);
 		str.assign((std::istreambuf_iterator<char>(stream)),std::istreambuf_iterator<char>());
 		stream.close();
 	}
 	return str;
 }
 
-GLuint LoadShaders(const char *vertex_file_path,const char *fragment_file_path) {
+GLuint LoadShaders(const char *vertex_path,const char *fragment_path) {
 	//cria os menino
 	GLuint vertex_id = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragment_id = glCreateShader(GL_FRAGMENT_SHADER);
 	
 	//carrega do arquivo
-	std::string vertex_code = LoadFile(vertex_file_path);
-	std::string fragment_code = LoadFile(fragment_file_path);
+	std::string vertex_code = LoadFile(vertex_path);
+	std::string fragment_code = LoadFile(fragment_path);
 	
 	GLint status = GL_FALSE;
 	int info_log_length;

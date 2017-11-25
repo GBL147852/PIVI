@@ -1,3 +1,5 @@
+#include <vector>
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,6 +14,7 @@ using namespace glm;
 
 #include "shader.hpp"
 #include "texture.hpp"
+#include "mesh.hpp"
 
 int main() {
 	//inicia o guri
@@ -58,7 +61,7 @@ int main() {
 	glBindVertexArray(vertex_array_id);
 	
 	//carrega os shaders la
-	GLuint shaders_program_id = LoadShaders("TransformVertexShader.vertexshader","TextureFragmentShader.fragmentshader");
+	GLuint shaders_program_id = LoadShaders("vert","frag_texture");
 	
 	//já marca o nome do parâmetro q vai passar pro shader
 	GLuint matrix_id = glGetUniformLocation(shaders_program_id,"MVP");
@@ -67,7 +70,7 @@ int main() {
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
 	//matriz view
 	glm::mat4 view = glm::lookAt(
-		glm::vec3(4,3,3), //câmera em (4,3,3)
+		glm::vec3(-4,3,3), //câmera em (4,3,3)
 		glm::vec3(0,0,0), //olhando pro meio
 		glm::vec3(0,1,0)  //com a cabeça pra cima
 	);
@@ -77,101 +80,26 @@ int main() {
 	glm::mat4 mvp = projection*view*model; // Remember, matrix multiplication is the other way around
 
 	//carrega a textura
-	//GLuint texture = loadBMP_custom("uvtemplate.bmp");
-	GLuint texture = LoadDDS("uvtemplate.DDS");
+	GLuint texture = LoadTexture("angery");
 	
 	//faz o sample
 	GLuint texture_id = glGetUniformLocation(shaders_program_id,"myTextureSampler");
 	
-	//vértices! 3 floats seguidos: vértice, 3 vértices seguidos: triângulo
-	static const GLfloat g_vertex_buffer_data[] = { 
-		-1.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		 1.0f, 1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f,-1.0f,
-		 1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f,-1.0f,
-		 1.0f,-1.0f,-1.0f,
-		 1.0f, 1.0f,-1.0f,
-		 1.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,
-		 1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,
-		-1.0f,-1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		-1.0f,-1.0f, 1.0f,
-		 1.0f,-1.0f, 1.0f,
-		 1.0f, 1.0f, 1.0f,
-		 1.0f,-1.0f,-1.0f,
-		 1.0f, 1.0f,-1.0f,
-		 1.0f,-1.0f,-1.0f,
-		 1.0f, 1.0f, 1.0f,
-		 1.0f,-1.0f, 1.0f,
-		 1.0f, 1.0f, 1.0f,
-		 1.0f, 1.0f,-1.0f,
-		-1.0f, 1.0f,-1.0f,
-		 1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f,-1.0f,
-		-1.0f, 1.0f, 1.0f,
-		 1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, 1.0f,
-		 1.0f,-1.0f, 1.0f
-	};
-
-	//uv tb. 2 floats: uv de um vértice
-	static const GLfloat g_uv_buffer_data[] = { 
-		0.000059f, 1.0f-0.000004f, 
-		0.000103f, 1.0f-0.336048f, 
-		0.335973f, 1.0f-0.335903f, 
-		1.000023f, 1.0f-0.000013f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.999958f, 1.0f-0.336064f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.336024f, 1.0f-0.671877f, 
-		0.667969f, 1.0f-0.671889f, 
-		1.000023f, 1.0f-0.000013f, 
-		0.668104f, 1.0f-0.000013f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.000059f, 1.0f-0.000004f, 
-		0.335973f, 1.0f-0.335903f, 
-		0.336098f, 1.0f-0.000071f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.335973f, 1.0f-0.335903f, 
-		0.336024f, 1.0f-0.671877f, 
-		1.000004f, 1.0f-0.671847f, 
-		0.999958f, 1.0f-0.336064f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.668104f, 1.0f-0.000013f, 
-		0.335973f, 1.0f-0.335903f, 
-		0.667979f, 1.0f-0.335851f, 
-		0.335973f, 1.0f-0.335903f, 
-		0.668104f, 1.0f-0.000013f, 
-		0.336098f, 1.0f-0.000071f, 
-		0.000103f, 1.0f-0.336048f, 
-		0.000004f, 1.0f-0.671870f, 
-		0.336024f, 1.0f-0.671877f, 
-		0.000103f, 1.0f-0.336048f, 
-		0.336024f, 1.0f-0.671877f, 
-		0.335973f, 1.0f-0.335903f, 
-		0.667969f, 1.0f-0.671889f, 
-		1.000004f, 1.0f-0.671847f, 
-		0.667979f, 1.0f-0.335851f
-	};
+	//carrega a mesh
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec2> uvs;
+	std::vector<glm::vec3> normals;
+	bool res = LoadMesh("sphere",vertices,uvs,normals);
 	
 	GLuint vertex_buffer;
 	glGenBuffers(1,&vertex_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER,vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER,sizeof(g_vertex_buffer_data),g_vertex_buffer_data,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(glm::vec3),&vertices[0],GL_STATIC_DRAW);
 	
 	GLuint uv_buffer;
 	glGenBuffers(1,&uv_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER,uv_buffer);
-	glBufferData(GL_ARRAY_BUFFER,sizeof(g_uv_buffer_data),g_uv_buffer_data,GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER,uvs.size()*sizeof(glm::vec2),&uvs[0],GL_STATIC_DRAW);
 	
 	while (!glfwWindowShouldClose(window)) {
 		//limpa a tela
@@ -211,7 +139,7 @@ int main() {
 		);
 		
 		//desenha como triângulos
-		glDrawArrays(GL_TRIANGLES,0,12*3);
+		glDrawArrays(GL_TRIANGLES,0,vertices.size());
 		
 		//tira essas coisas
 		glDisableVertexAttribArray(0);
