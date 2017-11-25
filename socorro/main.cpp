@@ -26,10 +26,13 @@ void start() {
 	glClearColor(0.0f,0.0f,0.4f,0.0f);
 	
 	//câmera
-	camera.projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
+	camera.projection = glm::perspective(
+		glm::radians(45.0f),
+		16.0f/9.0f,
+		.1f,100.0f);
 	camera.view = glm::lookAt(
 		glm::vec3(-3,1,3), //posição
-		glm::vec3(0,0,0), //pra onde tá olhando
+		glm::vec3(0,3,0), //pra onde tá olhando
 		glm::vec3(0,1,0)  //de cabeça pra cima
 	);
 	
@@ -48,7 +51,7 @@ void end() {
 }
 
 void update() {
-	//printf("oi! %f %f\n",totalTime,deltaTime);
+	rh_get_input();
 }
 
 void render() {

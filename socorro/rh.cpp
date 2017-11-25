@@ -28,6 +28,19 @@ GLuint matrix_mv_id;
 
 double firstTime,lastTime;
 
+// INPUT STATS
+// Initial position : on +Z
+glm::vec3 position = glm::vec3( 0, 0, 4 ); 
+// Initial horizontal angle : toward -Z
+float horizontalAngle = 0.0f;
+// Initial vertical angle : none
+float verticalAngle = 0.0f;
+// Initial Field of View
+float initialFoV = 60.0f;
+
+float speed = 3.0f; // 3 units / second
+float mouseSpeed = 0.005f;
+
 Mesh rh_create_mesh(const char *path) {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
@@ -101,6 +114,12 @@ bool rh_start() {
 	
 	//bota as tecla
 	glfwSetInputMode(window,GLFW_STICKY_KEYS,GL_TRUE);
+	//bota o rato
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    
+    //bota o mouse no centro da tela
+    glfwPollEvents();
+    glfwSetCursorPos(window, 1024/2, 768/2);
 	
 	//fundão
 	glClearColor(0,0,0,0);
@@ -125,8 +144,8 @@ bool rh_start() {
 	//inicializa valores de câmera
 	matrix_mvp_id = glGetUniformLocation(shaders_program_id,"mvp");
 	matrix_mv_id = glGetUniformLocation(shaders_program_id,"mv");
-	camera.projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
-	camera.view = glm::mat4(1);
+	// camera.projection = glm::perspective(glm::radians(45.0f),16.0f/9.0f,.1f,100.0f);
+	// camera.view = glm::mat4(1);+
 	
 	//arruma o time tb
 	lastTime = firstTime = glfwGetTime();
@@ -156,6 +175,12 @@ void rh_post_render() {
 	totalTime = now-firstTime;
 	deltaTime = now-lastTime;
 	lastTime = now;
+
+	if(glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS ||
+		   glfwWindowShouldClose(window) != 0 ){
+		rh_end();
+		exit(0);
+	}
 }
 
 void rh_end() {
@@ -218,4 +243,82 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+}
+
+void rh_get_input(){
+
+	// glfwGetTime is called only once, the first time this function is called
+	static double lastTime = glfwGetTime();
+
+	// Compute time difference between current and last frame
+	double currentTime = glfwGetTime();
+	float deltaTime = float(currentTime - lastTime);
+
+	// Get mouse position
+	double xpos, ypos;
+	glfwGetCursorPos(window, &xpos, &ypos);
+
+	// Reset mouse position for next frame
+	glfwSetCursorPos(window, 1024/2, 768/2);
+
+	// Compute new orientation
+	horizontalAngle += mouseSpeed * float(1024/2 - xpos );
+	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
+
+	// Direction : Spherical coordinates to Cartesian coordinates conversion
+	glm::vec3 direction(
+		cos(verticalAngle) * sin(horizontalAngle), 
+		sin(verticalAngle),
+		cos(verticalAngle) * cos(horizontalAngle)
+	);
+	
+	// Right vector
+	glm::vec3 right = glm::vec3(
+		sin(horizontalAngle - 3.14f/2.0f), 
+		0,
+		cos(horizontalAngle - 3.14f/2.0f)
+	);
+	
+	// Up vector
+	glm::vec3 up = glm::vec3( 0, 1, 0 );
+
+	// Move forward
+	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
+		position += direction * deltaTime * speed;
+	}
+	// Move backward
+	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
+		position -= direction * deltaTime * speed;
+	}
+	// Strafe right
+	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
+		position -= right * deltaTime * speed;
+	}
+	// Strafe left
+	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
+		position += right * deltaTime * speed;
+	}
+	// Go up
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		position.y += deltaTime * speed;
+	}
+	// Go down
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
+		position.y -= deltaTime * speed;
+	}
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
+		printf("%f\t",camera.view[2].x);
+		printf("%f\t",camera.view[2].y);
+		printf("%f\n",camera.view[2].z);
+	}
+
+	// Camera matrix
+	camera.view = glm::lookAt(
+						position,           // Camera is here
+						glm::vec3(0,0,1), // and looks here : at the same position, plus "direction"
+						up                  // Head is up (set to 0,-1,0 to look upside-down)
+				   );
+
+	// For the next frame, the "last time" will be "now"
+	lastTime = currentTime;
 }

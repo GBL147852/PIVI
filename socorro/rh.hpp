@@ -32,6 +32,7 @@ bool rh_start();
 bool rh_loop();
 void rh_pre_render();
 void rh_post_render();
+void rh_get_input();
 void rh_end();
 
 void rh_draw(Mesh mesh,Texture texture,glm::mat4 model);
