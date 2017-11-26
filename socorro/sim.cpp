@@ -7,6 +7,27 @@
 
 #define PERLIN_SCALE 0.01
 
+//propriedades
+double sim_radius;
+double sim_gravity;
+double sim_projectile_drag;
+double sim_projectile_area;
+double sim_wind_max;
+
+//variáveis estocásticas
+double sim_wind_seed_u[3];
+double sim_wind_seed_v[3];
+
+//estado atual
+double sim_pos[3];
+double sim_vel[3];
+
+//mais coisas do estado atual
+int sim_collide;
+double sim_acc_drag[3];
+double sim_acc_wind[3];
+double sim_acc_gravity[3];
+
 void sim_generate_wind_seed() {
 	srand48(clock());
 	sim_wind_seed_u[0] = drand48()*256;
