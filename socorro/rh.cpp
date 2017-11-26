@@ -118,10 +118,10 @@ bool rh_start() {
 	glfwSetInputMode(window,GLFW_STICKY_KEYS,GL_TRUE);
 	//bota o rato
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    
-    //bota o mouse no centro da tela
-    glfwPollEvents();
-    glfwSetCursorPos(window, 1024/2, 768/2);
+	
+	//bota o mouse no centro da tela
+	glfwPollEvents();
+	glfwSetCursorPos(window, 1024/2, 768/2);
 	
 	//fundão
 	glClearColor(0,0,0,0);
@@ -206,36 +206,36 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 	glEnableVertexAttribArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER,mesh.vertex);
 	glVertexAttribPointer(
-		0,                  // atributo. tem q combinar com o shader
-		3,                  // comprimento. xyz = 2
-		GL_FLOAT,           // tipo
-		GL_FALSE,           // tá normalizado?
-		0,                  // stride
-		(void*)0            // offset no array
+		0,			//atributo. tem q combinar com o shader
+		3,			//comprimento. xyz = 2
+		GL_FLOAT,	//tipo
+		GL_FALSE,	//tá normalizado?
+		0,			//stride
+		(void*)0	//offset no array
 	);
 	
 	//os uvs são o 1
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER,mesh.uv);
 	glVertexAttribPointer(
-		1,                                // atributo. tem q combinar com o shader
-		2,                                // comprimento. uv = 2
-		GL_FLOAT,                         // tipo
-		GL_FALSE,                         // tá normalizado?
-		0,                                // stride
-		(void*)0                          // offset no array
+		1,			//atributo. tem q combinar com o shader
+		2,			//comprimento. uv = 2
+		GL_FLOAT,	//tipo
+		GL_FALSE,	//tá normalizado?
+		0,			//stride
+		(void*)0	//offset no array
 	);
 	
 	//os uvs são o 1
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER,mesh.normal);
 	glVertexAttribPointer(
-		2,                                // atributo. tem q combinar com o shader
-		3,                                // comprimento. xyz = 3
-		GL_FLOAT,                         // tipo
-		GL_FALSE,                         // tá normalizado?
-		0,                                // stride
-		(void*)0                          // offset no array
+		2,			//atributo. tem q combinar com o shader
+		3,			//comprimento. xyz = 3
+		GL_FLOAT,	//tipo
+		GL_FALSE,	//tá normalizado?
+		0,			//stride
+		(void*)0	//offset no array
 	);
 	
 	//desenha como triângulos
