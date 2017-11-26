@@ -28,21 +28,6 @@ GLuint matrix_mv_id;
 
 double firstTime,lastTime;
 
-float zoom = 3;
-
-// INPUT STATS
-// Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, zoom ); 
-// Initial horizontal angle : toward -Z
-float horizontalAngle = 0.0f;
-// Initial vertical angle : none
-float verticalAngle = 0.0f;
-// Initial Field of View
-float initialFoV = 60.0f;
-
-float speed = 3.0f; // 3 units / second
-float mouseSpeed = 0.005f;
-
 Mesh rh_create_mesh(const char *path) {
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec2> uvs;
@@ -177,12 +162,6 @@ void rh_post_render() {
 	totalTime = now-firstTime;
 	deltaTime = now-lastTime;
 	lastTime = now;
-
-	if(glfwGetKey(window, GLFW_KEY_ESCAPE ) == GLFW_PRESS ||
-		   glfwWindowShouldClose(window) != 0 ){
-		rh_end();
-		exit(0);
-	}
 }
 
 void rh_end() {
@@ -245,96 +224,4 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
-}
-
-void rh_get_input(){
-
-	// glfwGetTime is called only once, the first time this function is called
-	static double lastTime = glfwGetTime();
-
-	// Compute time difference between current and last frame
-	double currentTime = glfwGetTime();
-	float deltaTime = float(currentTime - lastTime);
-
-	// Get mouse position
-	double xpos, ypos;
-	glfwGetCursorPos(window, &xpos, &ypos);
-
-	// Reset mouse position for next frame
-	glfwSetCursorPos(window, 1024/2, 768/2);
-
-	// Compute new orientation
-	horizontalAngle += mouseSpeed * float(1024/2 - xpos );
-	verticalAngle   += mouseSpeed * float( 768/2 - ypos );
-
-	// Direction : Spherical coordinates to Cartesian coordinates conversion
-	glm::vec3 direction(
-		cos(verticalAngle) * sin(horizontalAngle), 
-		sin(verticalAngle),
-		cos(verticalAngle) * cos(horizontalAngle)
-	);
-	
-	// Right vector
-	glm::vec3 right = glm::vec3(
-		sin(horizontalAngle - 3.14f/2.0f), 
-		0,
-		cos(horizontalAngle - 3.14f/2.0f)
-	);
-	
-	// Up vector
-	glm::vec3 up = glm::vec3( 0, 1, 0 );
-
-	// Go up
-	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
-		// position.z += deltaTime * speed;
-		verticalAngle += speed * deltaTime;
-	}
-	// Go Down
-	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
-		// position.z -= deltaTime * speed;
-		verticalAngle -= speed * deltaTime;
-	}
-	// Go right
-	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
-		// position.x -= deltaTime * speed;
-		horizontalAngle += speed * deltaTime;
-	}
-	// Go left
-	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
-		// position.x += deltaTime * speed;
-		horizontalAngle -= speed * deltaTime;
-	}
-	// Zoom in
-	if(glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
-		zoom -= speed * deltaTime;
-	}
-	// Zoom out
-	if(glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
-		zoom += speed * deltaTime;
-	}
-	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
-
-	}
-
-	// Spooky smooth 
-	if(verticalAngle > ((PI/2) - (speed * deltaTime))) verticalAngle = (PI/2) - (speed * deltaTime);
-	if(verticalAngle < ((-PI/2) + (speed * deltaTime))) verticalAngle = (-PI/2) + (speed * deltaTime);
-
-	if(zoom < 2) zoom = 2;
-	if(zoom > 5) zoom = 5;
-
-	position.x = zoom * cos(verticalAngle) * sin(horizontalAngle);
-	position.y = zoom * sin(verticalAngle);
-	position.z = zoom * cos(verticalAngle) * cos(horizontalAngle);
-
-
-	// Camera matrix
-	camera.view = glm::lookAt(
-						position,           // A camera ta aqui
-						glm::vec3(0,0,0), 	// olhando pro centro
-						up                  // olhando pra cima
-				   );
-
-	// For the next frame, the "last time" will be "now"
-	lastTime = currentTime;
 }
