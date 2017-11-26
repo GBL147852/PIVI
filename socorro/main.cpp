@@ -36,6 +36,7 @@ std::vector<glm::mat4> simulation_trace;
 std::vector<glm::vec3> simulation_trace_pos;
 glm::mat4 simulation_trace_o;
 glm::mat4 simulation_trace_x;
+std::vector<glm::mat4> simulation_history;
 
 glm::vec3 missile_pos;
 glm::mat4 missile_mat;
@@ -138,6 +139,11 @@ void simulation_end() {
 	simulation_running = false;
 	simulation_ended = true;
 	simulation_trace_x = get_missile_ground();
+	simulation_history.push_back(simulation_trace_x);
+}
+
+void simulation_clear() {
+	simulation_history.clear();
 }
 
 bool update() {
@@ -254,16 +260,27 @@ bool update() {
 	rh_draw(mesh_sphere,texture_earth,glm::mat4(1));
 	
 	//desenha míssil
-	glm::mat4 missile_model = missile_mat*glm::scale(glm::mat4(1),glm::vec3(.1f));
-	rh_draw(mesh_missile,texture_missile,missile_model);
+	if (simulation_running) {
+		glm::mat4 missile_model = missile_mat*glm::scale(glm::mat4(1),glm::vec3(.1f));
+		rh_draw(mesh_missile,texture_missile,missile_model);
+	}
 	
-	//desenha traces
+	//desenha ponto de início
 	rh_draw(mesh_trace_o,texture_trace,simulation_trace_o*glm::scale(glm::mat4(1),glm::vec3(.05f)));
+	
+	//desenha ponto de fim
 	if (simulation_ended) {
 		rh_draw(mesh_trace_x,texture_trace,simulation_trace_x*glm::scale(glm::mat4(1),glm::vec3(.05f)));
 	}
+	
+	//desenha rastros
 	for (int a = 0; a < simulation_trace.size(); a++) {
 		rh_draw(mesh_trace,texture_trace,simulation_trace[a]*glm::scale(glm::mat4(1),glm::vec3(.05f,.05f,.025f)));
+	}
+	
+	//desenha histórico de simulações (pontos finais)
+	for (int a = 0; a < simulation_history.size(); a++) {
+		rh_draw(mesh_trace_o,texture_trace,simulation_history[a]*glm::scale(glm::mat4(1),glm::vec3(.01f,.01f,.01f)));
 	}
 	
 	return true;
