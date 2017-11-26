@@ -2,3 +2,5 @@
 *.sh
 
 .DS_Store
+
+socorro/main

@@ -81,6 +81,7 @@ void start() {
 	sim_projectile_drag = 0;
 	sim_projectile_area = 1;
 	sim_wind_max = 200;
+	sim_read_config("data/config.txt");
 	calc_missile();
 	
 	simulation_start();

@@ -21,7 +21,6 @@ bool LoadMesh(
 	FILE *file = fopen(("data/meshes/"+(std::string(path))+".obj").c_str(),"r");
 	if (file == NULL) {
 		printf("n deu pra carregar o modelo\n");
-		getchar();
 		return false;
 	}
 	

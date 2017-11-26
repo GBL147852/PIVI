@@ -1,0 +1,3 @@
+radius 6371000
+gravity 9.807
+wind_max 200

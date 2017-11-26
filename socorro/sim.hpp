@@ -22,6 +22,8 @@ extern double sim_acc_drag[3];
 extern double sim_acc_wind[3];
 extern double sim_acc_gravity[3];
 
+//lê um arquivo de configurações bla
+void sim_read_config(const char *path);
 //gera valores pras variáveis estocásticas
 void sim_generate_wind_seed();
 //realiza um passo da simulação, dado um delta time

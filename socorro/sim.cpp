@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <time.h>
 #include "sim.hpp"
@@ -27,6 +28,29 @@ int sim_collide;
 double sim_acc_drag[3];
 double sim_acc_wind[3];
 double sim_acc_gravity[3];
+
+void sim_read_config(const char *path) {
+	FILE *file = fopen(path,"r");
+	if (file == NULL) {
+		printf("n deu pra carregar as config??\n");
+		return;
+	}
+	while (1) {
+		char line_header[128];
+		if (fscanf(file,"%s",line_header) == EOF) break;
+		if (strcmp(line_header,"radius") == 0) {
+			fscanf(file,"%lf\n",&sim_radius);
+		} else if (strcmp(line_header,"gravity") == 0) {
+			fscanf(file,"%lf\n",&sim_gravity);
+		} else if (strcmp(line_header,"wind_max") == 0) {
+			fscanf(file,"%lf\n",&sim_wind_max);
+		} else {
+			char buffer[1000];
+			fgets(buffer,1000,file);
+		}
+	}
+	fclose(file);
+}
 
 void sim_generate_wind_seed() {
 	srand48(clock());
