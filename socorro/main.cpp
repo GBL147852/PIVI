@@ -21,6 +21,7 @@ Mesh mesh_sphere;
 Mesh mesh_missile;
 Texture texture_angery;
 Texture texture_smooth;
+Texture texture_earth;
 
 void start() {
 	//fundão azul
@@ -42,6 +43,7 @@ void start() {
 	mesh_missile = rh_create_mesh("missile");
 	texture_angery = rh_create_texture("angery");
 	texture_smooth = rh_create_texture("smooth");
+	texture_earth = rh_create_texture("earth");
 	
 	sim_radius = 6371000;
 	sim_gravity = 9.807;
@@ -66,6 +68,7 @@ void end() {
 	rh_delete_mesh(mesh_missile);
 	rh_delete_texture(texture_angery);
 	rh_delete_texture(texture_smooth);
+	rh_delete_texture(texture_earth);
 }
 
 void update() {
@@ -76,7 +79,7 @@ void update() {
 }
 
 void render() {
-	rh_draw(mesh_sphere,texture_angery,glm::mat4(1));
+	rh_draw(mesh_sphere,texture_earth,glm::mat4(1));
 	glm::mat4 missile_model = glm::scale(glm::mat4(1),glm::vec3(.2f));
 	double x = sim_pos[0]/sim_radius;
 	double y = sim_pos[1]/sim_radius;
