@@ -28,9 +28,11 @@ GLuint matrix_mv_id;
 
 double firstTime,lastTime;
 
+float zoom = 3;
+
 // INPUT STATS
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, 4 ); 
+glm::vec3 position = glm::vec3( 0, 0, zoom ); 
 // Initial horizontal angle : toward -Z
 float horizontalAngle = 0.0f;
 // Initial vertical angle : none
@@ -282,41 +284,55 @@ void rh_get_input(){
 	// Up vector
 	glm::vec3 up = glm::vec3( 0, 1, 0 );
 
-	// Move forward
-	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
-		position += direction * deltaTime * speed;
-	}
-	// Move backward
-	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
-		position -= direction * deltaTime * speed;
-	}
-	// Strafe right
-	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
-		position -= right * deltaTime * speed;
-	}
-	// Strafe left
-	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
-		position += right * deltaTime * speed;
-	}
 	// Go up
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		position.y += deltaTime * speed;
+	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
+		// position.z += deltaTime * speed;
+		verticalAngle += speed * deltaTime;
 	}
-	// Go down
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-		position.y -= deltaTime * speed;
+	// Go Down
+	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
+		// position.z -= deltaTime * speed;
+		verticalAngle -= speed * deltaTime;
+	}
+	// Go right
+	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
+		// position.x -= deltaTime * speed;
+		horizontalAngle += speed * deltaTime;
+	}
+	// Go left
+	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
+		// position.x += deltaTime * speed;
+		horizontalAngle -= speed * deltaTime;
+	}
+	// Zoom in
+	if(glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
+		zoom -= speed * deltaTime;
+	}
+	// Zoom out
+	if(glfwGetKey( window, GLFW_KEY_DOWN ) == GLFW_PRESS){
+		zoom += speed * deltaTime;
 	}
 	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS){
-		printf("%f\t",camera.view[2].x);
-		printf("%f\t",camera.view[2].y);
-		printf("%f\n",camera.view[2].z);
+
 	}
+
+	// Spooky smooth 
+	if(verticalAngle > ((PI/2) - (speed * deltaTime))) verticalAngle = (PI/2) - (speed * deltaTime);
+	if(verticalAngle < ((-PI/2) + (speed * deltaTime))) verticalAngle = (-PI/2) + (speed * deltaTime);
+
+	if(zoom < 2) zoom = 2;
+	if(zoom > 5) zoom = 5;
+
+	position.x = zoom * cos(verticalAngle) * sin(horizontalAngle);
+	position.y = zoom * sin(verticalAngle);
+	position.z = zoom * cos(verticalAngle) * cos(horizontalAngle);
+
 
 	// Camera matrix
 	camera.view = glm::lookAt(
-						position,           // Camera is here
-						glm::vec3(0,0,1), // and looks here : at the same position, plus "direction"
-						up                  // Head is up (set to 0,-1,0 to look upside-down)
+						position,           // A camera ta aqui
+						glm::vec3(0,0,0), 	// olhando pro centro
+						up                  // olhando pra cima
 				   );
 
 	// For the next frame, the "last time" will be "now"

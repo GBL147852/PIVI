@@ -4,6 +4,8 @@
 #include <GLFW/glfw3.h>
 extern GLFWwindow* window;
 
+#define PI 3.14159265359
+
 typedef struct {
 	GLuint vertex,uv,normal;
 	unsigned int count;
