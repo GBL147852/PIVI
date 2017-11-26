@@ -56,7 +56,7 @@ void update() {
 
 void render() {
 	rh_draw(mesh_sphere,texture_angery,glm::scale(glm::mat4(1),glm::vec3(1,1,1)));
-	rh_draw(mesh_missile,texture_smooth,glm::translate(glm::mat4(1),glm::vec3(-1.5f,0,0)));
+	rh_draw(mesh_missile,texture_smooth,glm::scale(glm::translate(glm::mat4(1),glm::vec3(-1.5f,0,0)), glm::vec3(0.2,0.2,0.2)));
 }
 
 int main() {
