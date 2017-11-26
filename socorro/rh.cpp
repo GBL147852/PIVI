@@ -9,6 +9,10 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/norm.hpp>
 using namespace glm;
 
 #include "shader.hpp"
@@ -83,7 +87,7 @@ bool rh_start() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 	
 	//oi janela
-	window = glfwCreateWindow(960,540,"aaa",NULL,NULL);
+	window = glfwCreateWindow(1280,720,"aaa",NULL,NULL);
 	if (window == NULL) {
 		fprintf(stderr,"janela n foi\n");
 		glfwTerminate();
@@ -103,10 +107,7 @@ bool rh_start() {
 	glfwSetInputMode(window,GLFW_STICKY_KEYS,GL_TRUE);
 	//bota o rato
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	
-	//bota o mouse no centro da tela
 	glfwPollEvents();
-	glfwSetCursorPos(window, 1024/2, 768/2);
 	
 	//fundão
 	glClearColor(0,0,0,0);
@@ -145,14 +146,12 @@ bool rh_start() {
 }
 
 bool rh_loop() {
-	return !glfwWindowShouldClose(window);
-}
-
-void rh_pre_render() {
+	if (glfwWindowShouldClose(window)) return false;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	return true;
 }
 
-void rh_post_render() {
+void rh_post_loop() {
 	//troca os buffers e cata evento
 	glfwSwapBuffers(window);
 	glfwPollEvents();
@@ -224,4 +223,32 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(2);
+}
+
+quat rh_rot_quat(vec3 start,vec3 dest) {
+	start = normalize(start);
+	dest = normalize(dest);
+	float cosTheta = dot(start,dest);
+	vec3 rotationAxis;
+	if (cosTheta < -1 + 0.001f) {
+		rotationAxis = cross(vec3(0,0,1),start);
+		if (glm::length(rotationAxis) < 0.01) {
+			rotationAxis = cross(vec3(1,0,0),start);
+		}
+		rotationAxis = normalize(rotationAxis);
+		return glm::angleAxis(glm::radians(180.0f),rotationAxis);
+	}
+	rotationAxis = cross(start,dest);
+	float s = sqrt((1+cosTheta)*2);
+	float invs = 1/s;
+	return quat(
+		s * 0.5f, 
+		rotationAxis.x * invs,
+		rotationAxis.y * invs,
+		rotationAxis.z * invs
+	);
+}
+
+glm::mat4 rh_rot(vec3 start,vec3 dest) {
+	return glm::mat4_cast(rh_rot_quat(start,dest));
 }

@@ -32,11 +32,13 @@ void rh_delete_texture(Texture texture);
 
 bool rh_start();
 bool rh_loop();
-void rh_pre_render();
-void rh_post_render();
+void rh_post_loop();
 void rh_get_input();
 void rh_end();
 
 void rh_draw(Mesh mesh,Texture texture,glm::mat4 model);
+
+quat rh_rot_quat(vec3 start,vec3 dest);
+glm::mat4 rh_rot(vec3 start,vec3 dest);
 
 #endif

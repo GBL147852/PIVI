@@ -9,6 +9,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 using namespace glm;
 
 #include "shader.hpp"
@@ -19,26 +20,45 @@ using namespace glm;
 
 Mesh mesh_sphere;
 Mesh mesh_missile;
-Texture texture_smooth;
+Mesh mesh_trace;
+Mesh mesh_trace_o;
+Mesh mesh_trace_x;
 Texture texture_earth;
+Texture texture_missile;
+Texture texture_trace;
 
 float zoom = 3;
+int simulation_speed = 100;
+bool simulation_running = false;
+bool simulation_ended = false;
+
+std::vector<glm::mat4> simulation_trace;
+std::vector<glm::vec3> simulation_trace_pos;
+glm::mat4 simulation_trace_o;
+glm::mat4 simulation_trace_x;
+
+glm::vec3 missile_pos;
+glm::mat4 missile_mat;
+
 
 // INPUT STATS
 // Initial position : on +Z
-glm::vec3 position = glm::vec3( 0, 0, zoom ); 
+glm::vec3 position( 0, 0, zoom ); 
 // Initial horizontal angle : toward -Z
-float horizontalAngle = 0.0f;
+float horizontal_angle = 0.0f;
 // Initial vertical angle : none
-float verticalAngle = 0.0f;
+float vertical_angle = 0.0f;
 // Initial Field of View
 float fov = 60.0f;
 
 float speed = 3.0f; // 3 units / second
-float mouseSpeed = 3.0f;
-float verticalLimit = PI*0.49f;
+float mouse_speed = 3.0f;
+float vertical_limit = PI*0.49f;
 
-int first = 1;
+bool first = true;
+
+void simulation_start();
+void calc_missile();
 
 void start() {
 	//fundão azul
@@ -47,43 +67,86 @@ void start() {
 	//nossos troço
 	mesh_sphere = rh_create_mesh("sphere");
 	mesh_missile = rh_create_mesh("missile");
-	texture_smooth = rh_create_texture("smooth");
+	mesh_trace = rh_create_mesh("trace");
+	mesh_trace_o = rh_create_mesh("trace_o");
+	mesh_trace_x = rh_create_mesh("trace_x");
 	texture_earth = rh_create_texture("earth");
+	texture_missile = rh_create_texture("missile");
+	texture_trace = rh_create_texture("trace");
 	
 	//inicia simulação
 	sim_radius = 6371000;
 	sim_gravity = 9.807;
-	sim_projectile_drag = 0.01;
+	sim_projectile_drag = 0;
 	sim_projectile_area = 1;
-	sim_wind_max = 100;
+	sim_wind_max = 200;
+	calc_missile();
 	
-	sim_generate_wind_seed();
-	
-	sim_pos[0] = 0;
-	sim_pos[1] = sim_radius;
-	sim_pos[2] = 0;
-	sim_vel[0] = 15000;
-	sim_vel[1] = 500;
-	sim_vel[2] = 0;
-	
-	sim_collide = 0;
+	simulation_start();
 }
 
 void end() {
 	rh_delete_mesh(mesh_sphere);
 	rh_delete_mesh(mesh_missile);
-	rh_delete_texture(texture_smooth);
+	rh_delete_mesh(mesh_trace);
+	rh_delete_mesh(mesh_trace_o);
+	rh_delete_mesh(mesh_trace_x);
 	rh_delete_texture(texture_earth);
+	rh_delete_texture(texture_missile);
+	rh_delete_texture(texture_trace);
+}
+
+glm::mat4 get_missile_ground() {
+	glm::vec3 direction = glm::normalize(glm::vec3(sim_pos[0],sim_pos[1],sim_pos[2]));
+	return glm::translate(glm::mat4(1),direction)*rh_rot(glm::vec3(0,1,0),direction);
+}
+
+void calc_missile() {
+	missile_pos = glm::vec3(sim_pos[0]/sim_radius,sim_pos[1]/sim_radius,sim_pos[2]/sim_radius);
+	missile_mat = glm::inverse(glm::lookAt(
+		glm::vec3(missile_pos.x,missile_pos.y,missile_pos.z),
+		glm::vec3(missile_pos.x+sim_vel[0],missile_pos.y+sim_vel[1],missile_pos.z+sim_vel[2]),
+		glm::vec3(0,-1,0)
+	));
+}
+
+void simulation_start() {
+	sim_generate_wind_seed();
+	
+	//precisa ver como setar esses valores depois
+	sim_pos[0] = 0;
+	sim_pos[1] = sim_radius;
+	sim_pos[2] = 0;
+	sim_vel[0] = 6000;
+	sim_vel[1] = 1000;
+	sim_vel[2] = 0;
+	sim_collide = 0;
+	
+	simulation_running = true;
+	simulation_ended = false;
+	simulation_trace_o = get_missile_ground();
+	simulation_trace_pos.push_back(missile_pos);
+}
+
+void simulation_stop() {
+	simulation_running = false;
+	simulation_ended = false;
+	simulation_trace_pos.clear();
+}
+
+void simulation_end() {
+	simulation_running = false;
+	simulation_ended = true;
+	simulation_trace_x = get_missile_ground();
 }
 
 bool update() {
+	//já fecha se pressionar esc etc
 	if (glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		return false;
 	}
 	
-	if (!sim_collide) {
-		for (int a = 0; a < 100; a++) sim_step(deltaTime);
-	}
+	//cata tamanho da tela e reajusta se necessário. também cata o rato
 	int width,height;
 	glfwGetWindowSize(window,&width,&height);
 	double mouse_x,mouse_y;
@@ -103,28 +166,28 @@ bool update() {
 	);
 	
 	// Compute new orientation
-	horizontalAngle -= mouseSpeed * mouse_x;
-	verticalAngle   += mouseSpeed * mouse_y;
+	horizontal_angle -= mouse_speed * mouse_x;
+	vertical_angle   += mouse_speed * mouse_y;
 	
 	// Go up
 	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
 		// position.z += deltaTime * speed;
-		verticalAngle -= speed * deltaTime;
+		vertical_angle -= speed * deltaTime;
 	}
 	// Go Down
 	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
 		// position.z -= deltaTime * speed;
-		verticalAngle += speed * deltaTime;
+		vertical_angle += speed * deltaTime;
 	}
 	// Go right
 	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
 		// position.x -= deltaTime * speed;
-		horizontalAngle -= speed * deltaTime;
+		horizontal_angle -= speed * deltaTime;
 	}
 	// Go left
 	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
 		// position.x += deltaTime * speed;
-		horizontalAngle += speed * deltaTime;
+		horizontal_angle += speed * deltaTime;
 	}
 	// Zoom in
 	if(glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
@@ -139,15 +202,15 @@ bool update() {
 	}
 	
 	// Spooky smooth
-	if(verticalAngle < -verticalLimit) verticalAngle = -verticalLimit;
-	if(verticalAngle > verticalLimit) verticalAngle = verticalLimit;
+	if(vertical_angle < -vertical_limit) vertical_angle = -vertical_limit;
+	if(vertical_angle > vertical_limit) vertical_angle = vertical_limit;
 	
 	if(zoom < 2) zoom = 2;
 	if(zoom > 5) zoom = 5;
 	
-	position.x = zoom * cos(verticalAngle) * sin(horizontalAngle);
-	position.y = zoom * sin(verticalAngle);
-	position.z = zoom * cos(verticalAngle) * cos(horizontalAngle);
+	position.x = zoom * cos(vertical_angle) * sin(horizontal_angle);
+	position.y = zoom * sin(vertical_angle);
+	position.z = zoom * cos(vertical_angle) * cos(horizontal_angle);
 	
 	// Camera matrix
 	camera.view = glm::lookAt(
@@ -156,33 +219,64 @@ bool update() {
 		glm::vec3(0,1,0)    // olhando pra cima
 	);
 	
-	return true;
-}
-
-void render() {
+	//ok bora simular
+	bool calc_missile_done = false;
+	if (simulation_running) {
+		for (int a = 0; a < simulation_speed; a++) {
+			sim_step(deltaTime);
+			if (sim_collide) {
+				if (!calc_missile_done) {
+					calc_missile_done = true;
+					calc_missile();
+				}
+				simulation_end();
+				break;
+			}
+		}
+		if (!calc_missile_done) {
+			calc_missile_done = true;
+			calc_missile();
+		}
+		if (glm::distance(simulation_trace_pos.back(),missile_pos) > 0.05f) {
+			simulation_trace.push_back(missile_mat);
+			simulation_trace_pos.push_back(missile_pos);
+		}
+	}
+	if (!calc_missile_done) {
+		calc_missile_done = true;
+		calc_missile();
+	}
+	if (!simulation_running && !simulation_ended) {
+		simulation_trace_o = get_missile_ground();
+	}
+	
+	//desenha terra
 	rh_draw(mesh_sphere,texture_earth,glm::mat4(1));
-	glm::mat4 missile_model = glm::scale(glm::mat4(1),glm::vec3(.1f));
-	double x = sim_pos[0]/sim_radius;
-	double y = sim_pos[1]/sim_radius;
-	double z = sim_pos[2]/sim_radius;
-	missile_model = glm::inverse(glm::lookAt(
-		glm::vec3(x,y,z),
-		glm::vec3(x+sim_vel[0],y+sim_vel[1],z+sim_vel[2]),
-		glm::vec3(0,-1,0)
-	))*missile_model;
-	rh_draw(mesh_missile,texture_smooth,missile_model);
+	
+	//desenha míssil
+	glm::mat4 missile_model = missile_mat*glm::scale(glm::mat4(1),glm::vec3(.1f));
+	rh_draw(mesh_missile,texture_missile,missile_model);
+	
+	//desenha traces
+	rh_draw(mesh_trace_o,texture_trace,simulation_trace_o*glm::scale(glm::mat4(1),glm::vec3(.05f)));
+	if (simulation_ended) {
+		rh_draw(mesh_trace_x,texture_trace,simulation_trace_x*glm::scale(glm::mat4(1),glm::vec3(.05f)));
+	}
+	for (int a = 0; a < simulation_trace.size(); a++) {
+		rh_draw(mesh_trace,texture_trace,simulation_trace[a]*glm::scale(glm::mat4(1),glm::vec3(.05f,.05f,.025f)));
+	}
+	
+	return true;
 }
 
 int main() {
 	if (!rh_start()) return -1;
 	start();
-	first = 1;
+	first = true;
 	while (rh_loop()) {
 		if (!update()) break;
-		rh_pre_render();
-		render();
-		rh_post_render();
-		first = 0;
+		rh_post_loop();
+		first = false;
 	}
 	end();
 	rh_end();
