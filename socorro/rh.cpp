@@ -204,7 +204,7 @@ void rh_draw(Mesh mesh,Texture texture,glm::mat4 model) {
 		(void*)0	//offset no array
 	);
 	
-	//os uvs são o 1
+	//as normais são 2
 	glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ARRAY_BUFFER,mesh.normal);
 	glVertexAttribPointer(
