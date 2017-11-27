@@ -18,21 +18,28 @@ using namespace glm;
 #include "rh.hpp"
 #include "sim.hpp"
 
-Mesh mesh_sphere;
+Mesh mesh_arrow;
 Mesh mesh_missile;
-Mesh mesh_trace;
+Mesh mesh_sphere;
 Mesh mesh_trace_o;
 Mesh mesh_trace_x;
+Mesh mesh_trace;
+Texture texture_direction;
 Texture texture_earth;
 Texture texture_missile;
 Texture texture_trace;
 
 float zoom = 3;
 
-int simulation_speed = 100;
+int simulation_speed = 200;
 bool simulation_running = false;
 bool simulation_ended = false;
 
+double simulation_pos_horizontal_angle;
+double simulation_pos_vertical_angle;
+double simulation_vel_horizontal_angle;
+double simulation_vel_vertical_angle;
+double simulation_vel_total;
 double simulation_start_pos[3];
 double simulation_start_vel[3];
 
@@ -53,7 +60,7 @@ bool press_backspace = false;
 // Initial position : on +Z
 glm::vec3 position( 0, 0, zoom ); 
 // Initial horizontal angle : toward -Z
-float horizontal_angle = 0.0f;
+float horizontal_angle = 0.0f; 
 // Initial vertical angle : none
 float vertical_angle = 0.0f;
 // Initial Field of View
@@ -61,23 +68,26 @@ float fov = 60.0f;
 
 float speed = 3.0f; // 3 units / second
 float mouse_speed = 3.0f;
-float vertical_limit = PI*0.49f;
+float vertical_limit = M_PI*.49f;
 
 bool first = true;
 
-void simulation_start();
 void calc_missile();
+void calc_simulation_start();
+void simulation_start();
 
 void start() {
 	//fundão marelo
 	glClearColor(236.0f/255.0f,230.0f/255.0f,202.0f/255.0f,0.0f);
 	
 	//nossos troço
-	mesh_sphere = rh_create_mesh("sphere");
+	mesh_arrow = rh_create_mesh("arrow");
 	mesh_missile = rh_create_mesh("missile");
-	mesh_trace = rh_create_mesh("trace");
+	mesh_sphere = rh_create_mesh("sphere");
 	mesh_trace_o = rh_create_mesh("trace_o");
 	mesh_trace_x = rh_create_mesh("trace_x");
+	mesh_trace = rh_create_mesh("trace");
+	texture_direction = rh_create_texture("direction");
 	texture_earth = rh_create_texture("earth");
 	texture_missile = rh_create_texture("missile");
 	texture_trace = rh_create_texture("trace");
@@ -91,20 +101,22 @@ void start() {
 	sim_read_config("data/config.txt");
 	calc_missile();
 	
-	simulation_start_pos[0] = 0;
-	simulation_start_pos[1] = 0;
-	simulation_start_pos[2] = sim_radius;
-	simulation_start_vel[0] = 6000;
-	simulation_start_vel[1] = 0;
-	simulation_start_vel[2] = 1000;
+	simulation_pos_horizontal_angle = 0;
+	simulation_pos_vertical_angle = 0;
+	simulation_vel_horizontal_angle = 0;
+	simulation_vel_vertical_angle = M_PI*.25f;
+	simulation_vel_total = 3000;
+	calc_simulation_start();
 }
 
 void end() {
-	rh_delete_mesh(mesh_sphere);
+	rh_delete_mesh(mesh_arrow);
 	rh_delete_mesh(mesh_missile);
-	rh_delete_mesh(mesh_trace);
+	rh_delete_mesh(mesh_sphere);
 	rh_delete_mesh(mesh_trace_o);
 	rh_delete_mesh(mesh_trace_x);
+	rh_delete_mesh(mesh_trace);
+	rh_delete_texture(texture_direction);
 	rh_delete_texture(texture_earth);
 	rh_delete_texture(texture_missile);
 	rh_delete_texture(texture_trace);
@@ -122,6 +134,20 @@ void calc_missile() {
 		glm::vec3(missile_pos.x+sim_vel[0],missile_pos.y+sim_vel[1],missile_pos.z+sim_vel[2]),
 		glm::vec3(0,-1,0)
 	));
+}
+
+void calc_simulation_start() {
+	simulation_start_pos[0] = sim_radius*cos(simulation_pos_vertical_angle)*sin(simulation_pos_horizontal_angle);
+	simulation_start_pos[1] = sim_radius*sin(simulation_pos_vertical_angle);
+	simulation_start_pos[2] = sim_radius*cos(simulation_pos_vertical_angle)*cos(simulation_pos_horizontal_angle);
+	glm::vec4 v(0,float(simulation_vel_total),0,0);
+	v = glm::rotate(glm::mat4(1),float(simulation_vel_vertical_angle),vec3(1,0,0))*v;
+	v = glm::rotate(glm::mat4(1),float(simulation_vel_horizontal_angle),vec3(0,0,1))*v;
+	v = glm::rotate(glm::mat4(1),-float(simulation_pos_vertical_angle),vec3(1,0,0))*v;
+	v = glm::rotate(glm::mat4(1),float(simulation_pos_horizontal_angle),vec3(0,1,0))*v;
+	simulation_start_vel[0] = v.x;
+	simulation_start_vel[1] = v.y;
+	simulation_start_vel[2] = v.z;
 }
 
 void simulation_start() {
@@ -187,26 +213,6 @@ bool update() {
 	horizontal_angle -= mouse_speed * mouse_x;
 	vertical_angle   += mouse_speed * mouse_y;
 	
-	// Go up
-	if (glfwGetKey( window, GLFW_KEY_W ) == GLFW_PRESS){
-		// position.z += deltaTime * speed;
-		vertical_angle -= speed * deltaTime;
-	}
-	// Go Down
-	if (glfwGetKey( window, GLFW_KEY_S ) == GLFW_PRESS){
-		// position.z -= deltaTime * speed;
-		vertical_angle += speed * deltaTime;
-	}
-	// Go right
-	if (glfwGetKey( window, GLFW_KEY_D ) == GLFW_PRESS){
-		// position.x -= deltaTime * speed;
-		horizontal_angle -= speed * deltaTime;
-	}
-	// Go left
-	if (glfwGetKey( window, GLFW_KEY_A ) == GLFW_PRESS){
-		// position.x += deltaTime * speed;
-		horizontal_angle += speed * deltaTime;
-	}
 	// Zoom in
 	if(glfwGetKey( window, GLFW_KEY_UP ) == GLFW_PRESS){
 		zoom -= speed * deltaTime;
@@ -234,13 +240,41 @@ bool update() {
 		glm::vec3(0,1,0)	// olhando pra cima
 	);
 	
+	bool calc_simulation_start_pls = false;
+	if (glfwGetKey(window,GLFW_KEY_Q) == GLFW_PRESS) {
+		simulation_vel_horizontal_angle += .5f*deltaTime;
+		calc_simulation_start_pls = true;
+	}
+	if (glfwGetKey(window,GLFW_KEY_W) == GLFW_PRESS) {
+		simulation_vel_horizontal_angle -= .5f*deltaTime;
+		calc_simulation_start_pls = true;
+	}
+	if (glfwGetKey(window,GLFW_KEY_A) == GLFW_PRESS) {
+		simulation_vel_vertical_angle -= .5f*deltaTime;
+		if (simulation_vel_vertical_angle < 0) simulation_vel_vertical_angle = 0;
+		calc_simulation_start_pls = true;
+	}
+	if (glfwGetKey(window,GLFW_KEY_S) == GLFW_PRESS) {
+		simulation_vel_vertical_angle += .5f*deltaTime;
+		if (simulation_vel_vertical_angle > vertical_limit) simulation_vel_vertical_angle = vertical_limit;
+		calc_simulation_start_pls = true;
+	}
+	if (glfwGetKey(window,GLFW_KEY_Z) == GLFW_PRESS) {
+		simulation_vel_total -= 1000*deltaTime;
+		if (simulation_vel_total < 10) simulation_vel_total = 10;
+		calc_simulation_start_pls = true;
+	}
+	if (glfwGetKey(window,GLFW_KEY_X) == GLFW_PRESS) {
+		simulation_vel_total += 1000*deltaTime;
+		calc_simulation_start_pls = true;
+	}
 	if (glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_1)) {
-		if (!simulation_running) {
-			simulation_clear();
-			simulation_start_pos[0] = position.x*sim_radius;
-			simulation_start_pos[1] = position.y*sim_radius;
-			simulation_start_pos[2] = position.z*sim_radius;
-		}
+		simulation_pos_horizontal_angle = horizontal_angle;
+		simulation_pos_vertical_angle = vertical_angle;
+		calc_simulation_start_pls = true;
+	}
+	if (calc_simulation_start_pls) {
+		calc_simulation_start();
 	}
 	
 	//hmm
@@ -301,7 +335,7 @@ bool update() {
 			}
 			calc_missile_done = true;
 			calc_missile();
-			if (glm::distance(simulation_trace_pos.back(),missile_pos) > 0.05f) {
+			if (glm::distance(simulation_trace_pos.back(),missile_pos) > 0.025f) {
 				simulation_trace.push_back(missile_mat);
 				simulation_trace_pos.push_back(missile_pos);
 			}
@@ -318,26 +352,40 @@ bool update() {
 	
 	//desenha míssil
 	if (simulation_running) {
-		glm::mat4 missile_model = missile_mat*glm::scale(glm::mat4(1),glm::vec3(.1f));
+		glm::mat4 missile_model = missile_mat*glm::scale(glm::mat4(1),glm::vec3(.05f));
 		rh_draw(mesh_missile,texture_missile,missile_model);
 	}
 	
 	//desenha ponto de início
-	rh_draw(mesh_trace_o,texture_trace,simulation_trace_o*glm::scale(glm::mat4(1),glm::vec3(.025f)));
+	rh_draw(mesh_trace_o,texture_trace,simulation_trace_o*glm::scale(glm::mat4(1),glm::vec3(.0125f)));
+	
+	//desenha direção (velocidade inicial)
+	glm::mat4 direction_model = glm::scale(glm::mat4(1),glm::vec3(.2f,simulation_vel_total*150.0f/sim_radius,.2f));
+	direction_model = rh_rot(glm::vec3(0,1,0),glm::vec3(
+		simulation_start_vel[0],
+		simulation_start_vel[1],
+		simulation_start_vel[2]
+	))*direction_model;
+	direction_model = glm::translate(glm::mat4(1),glm::vec3(
+		simulation_start_pos[0]/sim_radius,
+		simulation_start_pos[1]/sim_radius,
+		simulation_start_pos[2]/sim_radius
+	))*direction_model;
+	rh_draw(mesh_arrow,texture_direction,direction_model);
 	
 	//desenha ponto de fim
 	if (simulation_ended) {
-		rh_draw(mesh_trace_x,texture_trace,simulation_trace_x*glm::scale(glm::mat4(1),glm::vec3(.025f)));
+		rh_draw(mesh_trace_x,texture_trace,simulation_trace_x*glm::scale(glm::mat4(1),glm::vec3(.0125f)));
 	}
 	
 	//desenha rastros
 	for (int a = 0; a < simulation_trace.size(); a++) {
-		rh_draw(mesh_trace,texture_trace,simulation_trace[a]*glm::scale(glm::mat4(1),glm::vec3(.05f,.05f,.025f)));
+		rh_draw(mesh_trace,texture_trace,simulation_trace[a]*glm::scale(glm::mat4(1),glm::vec3(.025f,.025f,.0125f)));
 	}
 	
 	//desenha histórico de simulações (pontos finais)
 	for (int a = 0; a < simulation_history.size(); a++) {
-		rh_draw(mesh_trace_o,texture_trace,simulation_history[a]*glm::scale(glm::mat4(1),glm::vec3(.005f)));
+		rh_draw(mesh_trace_o,texture_trace,simulation_history[a]*glm::scale(glm::mat4(1),glm::vec3(.0015f)));
 	}
 	
 	return true;

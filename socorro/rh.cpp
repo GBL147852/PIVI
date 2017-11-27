@@ -87,7 +87,7 @@ bool rh_start() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 	
 	//oi janela
-	window = glfwCreateWindow(1280,720,"aaa",NULL,NULL);
+	window = glfwCreateWindow(960,960,"aaa",NULL,NULL);
 	if (window == NULL) {
 		fprintf(stderr,"janela n foi\n");
 		glfwTerminate();
