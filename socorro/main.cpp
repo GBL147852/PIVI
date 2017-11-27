@@ -76,6 +76,39 @@ void calc_missile();
 void calc_simulation_start();
 void simulation_start();
 
+void read_config(const char *path) {
+	FILE *file = fopen(path,"r");
+	if (file == NULL) {
+		printf("n deu pra carregar as config??\n");
+		return;
+	}
+	while (1) {
+		char line_header[128];
+		if (fscanf(file,"%s",line_header) == EOF) break;
+		if (strcmp(line_header,"radius") == 0) {
+			fscanf(file,"%lf\n",&sim_radius);
+		} else if (strcmp(line_header,"gravity") == 0) {
+			fscanf(file,"%lf\n",&sim_gravity);
+		} else if (strcmp(line_header,"wind_max") == 0) {
+			fscanf(file,"%lf\n",&sim_wind_max);
+		} else if (strcmp(line_header,"pos_horizontal_angle") == 0) {
+			fscanf(file,"%lf\n",&simulation_pos_horizontal_angle);
+		} else if (strcmp(line_header,"pos_vertical_angle") == 0) {
+			fscanf(file,"%lf\n",&simulation_pos_vertical_angle);
+		} else if (strcmp(line_header,"vel_horizontal_angle") == 0) {
+			fscanf(file,"%lf\n",&simulation_vel_horizontal_angle);
+		} else if (strcmp(line_header,"vel_vertical_angle") == 0) {
+			fscanf(file,"%lf\n",&simulation_vel_vertical_angle);
+		} else if (strcmp(line_header,"vel_total") == 0) {
+			fscanf(file,"%lf\n",&simulation_vel_total);
+		} else {
+			char buffer[1000];
+			fgets(buffer,1000,file);
+		}
+	}
+	fclose(file);
+}
+
 void start() {
 	//fundão marelo
 	glClearColor(236.0f/255.0f,230.0f/255.0f,202.0f/255.0f,0.0f);
@@ -98,14 +131,15 @@ void start() {
 	sim_projectile_drag = 0;
 	sim_projectile_area = 1;
 	sim_wind_max = 200;
-	sim_read_config("data/config.txt");
-	calc_missile();
 	
-	simulation_pos_horizontal_angle = 0;
-	simulation_pos_vertical_angle = 0;
-	simulation_vel_horizontal_angle = 0;
-	simulation_vel_vertical_angle = M_PI*.25f;
-	simulation_vel_total = 3000;
+	//simulation_pos_horizontal_angle = 0;
+	//simulation_pos_vertical_angle = 0;
+	//simulation_vel_horizontal_angle = 0;
+	//simulation_vel_vertical_angle = M_PI*.25f;
+	//simulation_vel_total = 3000;
+	
+	read_config("data/config.txt");
+	calc_missile();
 	calc_simulation_start();
 }
 
@@ -360,7 +394,7 @@ bool update() {
 	rh_draw(mesh_trace_o,texture_trace,simulation_trace_o*glm::scale(glm::mat4(1),glm::vec3(.0125f)));
 	
 	//desenha direção (velocidade inicial)
-	glm::mat4 direction_model = glm::scale(glm::mat4(1),glm::vec3(.2f,simulation_vel_total*150.0f/sim_radius,.2f));
+	glm::mat4 direction_model = glm::scale(glm::mat4(1),glm::vec3(.15f,simulation_vel_total*150.0f/sim_radius,.15f));
 	direction_model = rh_rot(glm::vec3(0,1,0),glm::vec3(
 		simulation_start_vel[0],
 		simulation_start_vel[1],

@@ -1,3 +1,8 @@
 radius 6371000
 gravity 9.807
 wind_max 200
+pos_horizontal_angle 0
+pos_vertical_angle 0
+vel_horizontal_angle 0
+vel_vertical_angle 0.7853981634
+vel_total 3000
