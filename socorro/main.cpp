@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
 #include <GL/glew.h>
 
@@ -40,6 +42,9 @@ double simulation_pos_vertical_angle;
 double simulation_vel_horizontal_angle;
 double simulation_vel_vertical_angle;
 double simulation_vel_total;
+double simulation_vel_x;
+double simulation_vel_y;
+double simulation_vel_z;
 double simulation_start_pos[3];
 double simulation_start_vel[3];
 
@@ -141,6 +146,7 @@ void start() {
 	read_config("data/config.txt");
 	calc_missile();
 	calc_simulation_start();
+	printf("\n");
 }
 
 void end() {
@@ -170,6 +176,27 @@ void calc_missile() {
 	));
 }
 
+void print_coord(float x,char unit) {
+	int deg = (int)x;
+	x = (x-deg)*60;
+	int min = (int)x;
+	x = (x-min)*60;
+	float seg = x;
+	printf("%d° %d' %f'' %c",deg,min,seg,unit);
+}
+
+void print_latlon(float lat,float lon) {
+	lat = fmod(lat*180/M_PI,360);
+	while (lat >= 180) lat -= 360;
+	while (lat < -180) lat += 360;
+	print_coord(fabs(lat),lat > 0 ? 'N' : 'S');
+	lon = fmod(lon*180/M_PI,360);
+	while (lon >= 180) lon -= 360;
+	while (lon < -180) lon += 360;
+	printf(", ");
+	print_coord(fabs(lon),lon > 0 ? 'L' : 'O');
+}
+
 void calc_simulation_start() {
 	simulation_start_pos[0] = sim_radius*cos(simulation_pos_vertical_angle)*sin(simulation_pos_horizontal_angle);
 	simulation_start_pos[1] = sim_radius*sin(simulation_pos_vertical_angle);
@@ -177,6 +204,9 @@ void calc_simulation_start() {
 	glm::vec4 v(0,float(simulation_vel_total),0,0);
 	v = glm::rotate(glm::mat4(1),float(simulation_vel_vertical_angle),vec3(1,0,0))*v;
 	v = glm::rotate(glm::mat4(1),float(simulation_vel_horizontal_angle),vec3(0,0,1))*v;
+	simulation_vel_x = v.x;
+	simulation_vel_y = v.y;
+	simulation_vel_z = v.z;
 	v = glm::rotate(glm::mat4(1),-float(simulation_pos_vertical_angle),vec3(1,0,0))*v;
 	v = glm::rotate(glm::mat4(1),float(simulation_pos_horizontal_angle),vec3(0,1,0))*v;
 	simulation_start_vel[0] = v.x;
@@ -198,6 +228,14 @@ void simulation_start() {
 	simulation_running = true;
 	simulation_ended = false;
 	simulation_trace_pos.push_back(missile_pos);
+	
+	printf("-- INÍCIO\nPOSIÇÃO: ");
+	print_latlon(simulation_pos_vertical_angle,simulation_pos_horizontal_angle);
+	printf("\nVELOCIDADE:\n%s: %f m/s\n%s: %f m/s\nvertical: %f m/s\n\n",
+		simulation_vel_y > 0 ? "norte" : "sul",fabs(simulation_vel_y),
+		simulation_vel_x > 0 ? "leste" : "oeste",fabs(simulation_vel_x),
+		simulation_vel_z
+	);
 }
 
 void simulation_stop() {
@@ -212,6 +250,12 @@ void simulation_end() {
 	simulation_ended = true;
 	simulation_trace_x = get_ground(sim_pos);
 	simulation_history.push_back(simulation_trace_x);
+	
+	printf("-- FIM\nPOSIÇÃO: ");
+	float horizontal = atan2(sim_pos[0],sim_pos[2]);
+	float vertical = atan2(sim_pos[1],sqrt(sim_pos[0]*sim_pos[0]+sim_pos[2]*sim_pos[2]));
+	print_latlon(vertical,horizontal);
+	printf("\n\n");
 }
 
 void simulation_clear() {
