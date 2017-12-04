@@ -133,8 +133,6 @@ void start() {
 	//configura simulação
 	sim_radius = 6371000;
 	sim_gravity = 9.807;
-	sim_projectile_drag = 0;
-	sim_projectile_area = 1;
 	sim_wind_max = 200;
 	
 	//simulation_pos_horizontal_angle = 0;
@@ -223,6 +221,7 @@ void simulation_start() {
 	sim_vel[0] = simulation_start_vel[0];
 	sim_vel[1] = simulation_start_vel[1];
 	sim_vel[2] = simulation_start_vel[2];
+	sim_time = 0;
 	sim_collide = 0;
 	
 	simulation_running = true;
@@ -255,7 +254,7 @@ void simulation_end() {
 	float horizontal = atan2(sim_pos[0],sim_pos[2]);
 	float vertical = atan2(sim_pos[1],sqrt(sim_pos[0]*sim_pos[0]+sim_pos[2]*sim_pos[2]));
 	print_latlon(vertical,horizontal);
-	printf("\n\n");
+	printf("\nTEMPO TOTAL:\n%f s\n\n",sim_time);
 }
 
 void simulation_clear() {

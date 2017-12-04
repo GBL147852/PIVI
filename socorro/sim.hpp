@@ -4,8 +4,6 @@
 //propriedades
 extern double sim_radius;
 extern double sim_gravity;
-extern double sim_projectile_drag;
-extern double sim_projectile_area;
 extern double sim_wind_max;
 
 //variáveis estocásticas
@@ -17,8 +15,8 @@ extern double sim_pos[3];
 extern double sim_vel[3];
 
 //mais coisas do estado atual
+extern double sim_time;
 extern int sim_collide;
-extern double sim_acc_drag[3];
 extern double sim_acc_wind[3];
 extern double sim_acc_gravity[3];
 

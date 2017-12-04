@@ -11,8 +11,6 @@
 //propriedades
 double sim_radius;
 double sim_gravity;
-double sim_projectile_drag;
-double sim_projectile_area;
 double sim_wind_max;
 
 //variáveis estocásticas
@@ -24,8 +22,8 @@ double sim_pos[3];
 double sim_vel[3];
 
 //mais coisas do estado atual
+double sim_time;
 int sim_collide;
-double sim_acc_drag[3];
 double sim_acc_wind[3];
 double sim_acc_gravity[3];
 
@@ -52,7 +50,12 @@ void normalise(double v[3]) {
 	v[2] *= factor;
 }
 
+double sqr_radius() {
+	return sim_pos[0]*sim_pos[0]+sim_pos[1]*sim_pos[1]+sim_pos[2]*sim_pos[2];
+}
+
 void sim_step(double dt) {
+	sim_time += dt;
 	//calcula vetores do projétil
 	double vector_right[3];
 	cross(sim_vel,sim_pos,vector_right);
@@ -60,11 +63,6 @@ void sim_step(double dt) {
 	cross(sim_pos,vector_right,vector_forward);
 	normalise(vector_right);
 	normalise(vector_forward);
-	//gerando aceleração de arrasto
-	double drag_factor = sim_projectile_drag*sim_projectile_area*.5;
-	sim_acc_drag[0] = -sim_vel[0]*drag_factor;
-	sim_acc_drag[1] = -sim_vel[1]*drag_factor;
-	sim_acc_drag[2] = -sim_vel[2]*drag_factor;
 	//gerando aceleração de vento (perlin noise)
 	double wind_u = sim_wind_max*perlin_noise(
 		sim_pos[0]*PERLIN_SCALE+sim_wind_seed_u[0],
@@ -80,17 +78,19 @@ void sim_step(double dt) {
 	sim_acc_wind[1] = vector_forward[1]*wind_u+vector_right[1]*wind_v;
 	sim_acc_wind[2] = vector_forward[2]*wind_u+vector_right[2]*wind_v;
 	//gerando aceleração de gravidade
-	double gravity_factor = sim_gravity/sim_radius;
-	sim_acc_gravity[0] = -sim_pos[0]*gravity_factor;
-	sim_acc_gravity[1] = -sim_pos[1]*gravity_factor;
-	sim_acc_gravity[2] = -sim_pos[2]*gravity_factor;
+	double current_sqr_radius = sqr_radius();
+	double current_gravity = sim_radius*sim_radius*sim_gravity/current_sqr_radius;
+	double current_radius = sqrt(current_sqr_radius);
+	sim_acc_gravity[0] = -sim_pos[0]*current_gravity/current_radius;
+	sim_acc_gravity[1] = -sim_pos[1]*current_gravity/current_radius;
+	sim_acc_gravity[2] = -sim_pos[2]*current_gravity/current_radius;
 	//aplicando aceleração e velocidade
 	for (int a = 0; a < 3; a++) {
-		sim_vel[a] += (sim_acc_drag[a]+sim_acc_wind[a]+sim_acc_gravity[a])*dt;
+		sim_vel[a] += (sim_acc_wind[a]+sim_acc_gravity[a])*dt;
 		sim_pos[a] += sim_vel[a]*dt;
 	}
 	//marca flag de colisão caso esteja dentro do raio do planeta
-	sim_collide = sim_pos[0]*sim_pos[0]+sim_pos[1]*sim_pos[1]+sim_pos[2]*sim_pos[2] <= sim_radius*sim_radius;
+	sim_collide = sqr_radius() <= sim_radius*sim_radius;
 }
 
 void sim_end(double dt) {
